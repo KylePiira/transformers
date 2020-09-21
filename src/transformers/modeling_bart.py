@@ -977,6 +977,7 @@ class BartForConditionalGeneration(PretrainedBartModel):
         super().__init__(config)
         base_model = BartModel(config)
         self.model = base_model
+        self.lm_head = _make_linear_from_emb(self.model.shared)
         self.register_buffer("final_logits_bias", torch.zeros((1, self.model.shared.num_embeddings)))
 
     def resize_token_embeddings(self, new_num_tokens: int) -> nn.Embedding:
@@ -1137,8 +1138,7 @@ class BartForConditionalGeneration(PretrainedBartModel):
         return self.model.encoder
 
     def get_output_embeddings(self):
-        return _make_linear_from_emb(self.model.shared)  # make it on the fly
-
+       return self.lm_head  # don't make it on the fly as it's not compatible with TPU's
 
 @add_start_docstrings(
     """Bart model with a sequence classification/head on top (a linear layer on top of the pooled output) e.g. for GLUE tasks. """,
